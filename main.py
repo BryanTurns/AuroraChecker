@@ -26,10 +26,45 @@ def sortByDistance(pos1, pos2):
 def main():
     try:
         if len(sys.argv) == 3:
+            lattitude = sys.argv[1]
+            for i in range(len(lattitude)):
+                print(lattitude[i])
+                if not lattitude[i].isdigit():
+                    match lattitude[i]:
+                        case 'S':
+                            lattitude = -1 * int(lattitude[0:i])
+                        case 'N':
+                            lattitude = int(lattitude[0:i])
+                        case default:
+                            raise Exception("Lattitude incorrectly formatted") 
+                    break
+            print("long")
+            longitude = sys.argv[2]
+            for i in range(len(longitude)):
+                print(longitude[i])
+                if not longitude[i].isdigit():
+                    match longitude[i]:
+                        case 'W':
+                            longitude = -1 * int(longitude[0:i])
+                        case 'E':
+                            longitude = int(longitude[0:i])
+                        case '-':
+                              continue
+                        case default:
+                            raise Exception("Longitude incorrectly formatted") 
+                    break
+            if abs(int(lattitude)) > 90:
+                        raise Exception("Latitude out of range (-90 < latitude < 90)")
+            if abs(int(longitude)) > 180:
+                        raise Exception("Longitude out of range (-180 < longitude < 180 )")
             global userLocation 
-            userLocation= [int(sys.argv[2]), int(sys.argv[1])]
+
+            userLocation = [int(lattitude), int(longitude)]
+            print(userLocation)
     except Exception as e:
         print("Invalid command format\nUsage:\nDefault Location (Kulusuk, Alaska): py main.py\nCustom Location: py main.py [Lattitude] [Longitude]")
+        print("Error: ", e)
+        return
 
     obsvTime = ""
     closestPrediction = ""
