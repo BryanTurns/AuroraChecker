@@ -1,11 +1,11 @@
-import json, math, requests
+import json, math, requests, sys
 from functools import cmp_to_key
 from time import sleep
 from datetime import datetime
 
 CHECK_INTERVAL = 90
 
-userLocation = [148, 65]
+userLocation = [37, 66]
 
 class bcolors:
     HEADER = '\033[95m'
@@ -24,6 +24,13 @@ def sortByDistance(pos1, pos2):
     return distance1 - distance2
 
 def main():
+    try:
+        if len(sys.argv) == 3:
+            global userLocation 
+            userLocation= [int(sys.argv[2]), int(sys.argv[1])]
+    except Exception as e:
+        print("Invalid command format\nUsage:\nDefault Location (Kulusuk, Alaska): py main.py\nCustom Location: py main.py [Lattitude] [Longitude]")
+
     obsvTime = ""
     closestPrediction = ""
     first = True
