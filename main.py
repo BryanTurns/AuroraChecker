@@ -28,7 +28,6 @@ def main():
         if len(sys.argv) == 3:
             lattitude = sys.argv[1]
             for i in range(len(lattitude)):
-                print(lattitude[i])
                 if not lattitude[i].isdigit():
                     match lattitude[i]:
                         case 'S':
@@ -38,10 +37,8 @@ def main():
                         case default:
                             raise Exception("Lattitude incorrectly formatted") 
                     break
-            print("long")
             longitude = sys.argv[2]
             for i in range(len(longitude)):
-                print(longitude[i])
                 if not longitude[i].isdigit():
                     match longitude[i]:
                         case 'W':
@@ -58,13 +55,12 @@ def main():
             if abs(int(longitude)) > 180:
                         raise Exception("Longitude out of range (-180 < longitude < 180 )")
             global userLocation 
-
-            userLocation = [int(lattitude), int(longitude)]
-            print(userLocation)
+            userLocation = [int(longitude), int(lattitude)]
     except Exception as e:
         print("Invalid command format\nUsage:\nDefault Location (Kulusuk, Alaska): py main.py\nCustom Location: py main.py [Lattitude] [Longitude]")
         print("Error: ", e)
         return
+    print(f"Location set to latt {userLocation[0], userLocation[1]}")
 
     obsvTime = ""
     closestPrediction = ""
