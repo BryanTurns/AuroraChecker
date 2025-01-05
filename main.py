@@ -14,10 +14,10 @@ argparser = argparse.ArgumentParser(
     description="Checks NOAA for Aurora predictions and alerts you when the prediction changes"
 )
 
-argparser.add_argument("latitude")
-argparser.add_argument("longitude")
-argparser.add_argument("-g", "--notifyglobal", action='store_true')
-argparser.add_argument("-t", "--threshold", type=int)
+argparser.add_argument("latitude", help="latitude of the place you want to see the chances of an Aurora. Can be either cardinal or decimal")
+argparser.add_argument("longitude", help="longitude of the place you want to see the chances of an Aurora. Can be either cardinal or decimal")
+argparser.add_argument("-g", "--notifyglobal", action='store_true', help="set this if you want text output when the NOAA forcast has been updated even if your areas chances haven't change")
+argparser.add_argument("-t", "--threshold", type=int, help="sets the Aurora probabilty threshold where you will recieve text output")
 
 class bcolors:
     HEADER = '\033[95m'
