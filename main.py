@@ -16,7 +16,8 @@ argparser = argparse.ArgumentParser(
 
 argparser.add_argument("latitude")
 argparser.add_argument("longitude")
-argparser.add_argument("-l", "--localonly", action='store_true')
+argparser.add_argument("-g", "--notifyglobal", action='store_true')
+argparser.add_argument("-t", "--threshold", type=int)
 
 class bcolors:
     HEADER = '\033[95m'
@@ -52,12 +53,17 @@ def main():
 
         auroraJson = auroraRes.json()
         if obsvTime != auroraJson["Observation Time"] or first:
-            if not args.localonly:
+            if args.notifyglobal:
                 print(f"\t{bcolors.BOLD}UPDATED FORCAST{bcolors.ENDC} @", datetime.now().time())
             coordinateData = auroraJson["coordinates"]
             coordinateData = sorted(coordinateData, key=cmp_to_key(sortByDistance))
             auroraOdds = coordinateData[0][2]
+            
+            if args.threshold and auroraOdds < args.threshold:
+                continue
+
             oddsString = bcolors.BOLD
+           
             if auroraOdds >= 70:
                 oddsString += f"{bcolors.OKGREEN}{auroraOdds}%{bcolors.ENDC}"
             elif auroraOdds >= 50:
