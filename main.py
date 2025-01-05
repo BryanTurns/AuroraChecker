@@ -5,7 +5,9 @@ from datetime import datetime
 
 CHECK_INTERVAL = 90
 
-userLocation = [37, 66]
+# Stored as [latitude, longitude]
+userLocationDeci = [66, 37]
+userLocationCardinal = []
 
 class bcolors:
     HEADER = '\033[95m'
@@ -18,49 +20,17 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+# Positions provided by NOAA are stored [longitude, latitude]
 def sortByDistance(pos1, pos2):
-    distance1 = math.sqrt(math.pow((pos1[0] - userLocation[0]), 2) + math.pow((pos1[1] - userLocation[1]), 2))
-    distance2 = math.sqrt(math.pow((pos2[0] - userLocation[0]), 2) + math.pow((pos2[1] - userLocation[1]), 2))
+    distance1 = math.sqrt(math.pow((pos1[0] - userLocationDeci[1]), 2) + math.pow((pos1[1] - userLocationDeci[0]), 2))
+    distance2 = math.sqrt(math.pow((pos2[0] - userLocationDeci[1]), 2) + math.pow((pos2[1] - userLocationDeci[0]), 2))
     return distance1 - distance2
 
 def main():
-    try:
-        if len(sys.argv) == 3:
-            latitude = sys.argv[1]
-            for i in range(len(latitude)):
-                if not latitude[i].isdigit():
-                    match latitude[i]:
-                        case 'S':
-                            latitude = -1 * int(latitude[0:i])
-                        case 'N':
-                            latitude = int(latitude[0:i])
-                        case default:
-                            raise Exception("latitude incorrectly formatted") 
-                    break
-            longitude = sys.argv[2]
-            for i in range(len(longitude)):
-                if not longitude[i].isdigit():
-                    match longitude[i]:
-                        case 'W':
-                            longitude = -1 * int(longitude[0:i])
-                        case 'E':
-                            longitude = int(longitude[0:i])
-                        case '-':
-                              continue
-                        case default:
-                            raise Exception("Longitude incorrectly formatted") 
-                    break
-            if abs(int(latitude)) > 90:
-                        raise Exception("Latitude out of range (-90 < latitude < 90)")
-            if abs(int(longitude)) > 180:
-                        raise Exception("Longitude out of range (-180 < longitude < 180 )")
-            global userLocation 
-            userLocation = [int(longitude), int(latitude)]
-    except Exception as e:
-        print("Invalid command format\nUsage:\nDefault Location (Kulusuk, Alaska): py main.py\nCustom Location: py main.py [latitude] [Longitude]")
-        print("Error: ", e)
-        return
-    print(f"Location set to latt {userLocation[0]} long {userLocation[1]}")
+    global userLocationDeci, userLocationCardinal
+    userLocationDeci = cardinalCoordsToDeci([sys.argv[1], sys.argv[2]])
+    userLocationCardinal = deciCoordsToCardinal(userLocationDeci)
+    print(f"{bcolors.UNDERLINE}Location set to {userLocationCardinal[0]} {userLocationCardinal[1]}{bcolors.ENDC}")
 
     obsvTime = ""
     closestPrediction = ""
@@ -104,6 +74,57 @@ def main():
     
         sleep(CHECK_INTERVAL)
         
+# coords = [latitude, longitude]
+def cardinalCoordsToDeci(coords):
+    latitude = coords[0]
+    for i in range(len(latitude)):
+        if not latitude[i].isdigit():
+            match latitude[i]:
+                case 'S':
+                    latitude = -1 * int(latitude[0:i])
+                case 'N':
+                    latitude = int(latitude[0:i])
+                case default:
+                    raise Exception("latitude incorrectly formatted") 
+            break
+    longitude = coords[1]
+    for i in range(len(longitude)):
+        if not longitude[i].isdigit():
+            match longitude[i]:
+                case 'W':
+                    longitude = -1 * int(longitude[0:i])
+                case 'E':
+                    longitude = int(longitude[0:i])
+                case '-':
+                        continue
+                case default:
+                    raise Exception("Longitude incorrectly formatted") 
+            break
+    if abs(int(latitude)) > 90:
+        raise Exception("Latitude out of range (-90 < latitude < 90)")
+    if abs(int(longitude)) > 180:
+        raise Exception("Longitude out of range (-180 < longitude < 180 )")
+    
+    return [int(latitude), int(longitude)]
+
+# coords = [latitude, longitude]
+# Assumes decimal coords provided are correct
+def deciCoordsToCardinal(coords):
+    latitude = coords[0]
+    if latitude >= 0:
+        latitude = str(latitude) + 'N'
+    elif latitude < 0:
+        latitude = str(-1 * latitude) + 'S'
+
+    longitude = coords[1]
+    if longitude >= 0:
+        longitude = str(longitude) + 'W'
+    elif longitude < 0:
+        longitude = str(-1 * longitude) + 'E'
+
+    return [latitude, longitude]
+    
+
 
 if __name__ == "__main__":
     main()
