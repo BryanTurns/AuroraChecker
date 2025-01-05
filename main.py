@@ -1,4 +1,4 @@
-import json, math, requests, sys
+import math, requests, sys, argparse
 from functools import cmp_to_key
 from time import sleep
 from datetime import datetime
@@ -8,6 +8,15 @@ CHECK_INTERVAL = 90
 # Stored as [latitude, longitude]
 userLocationDeci = [66, 37]
 userLocationCardinal = []
+
+argparser = argparse.ArgumentParser(
+    prog="AuroraChecker",
+    description="Checks NOAA for Aurora predictions and alerts you when the prediction changes"
+)
+
+argparser.add_argument("latitude")
+argparser.add_argument("longitude")
+argparser.add_argument("-l", "--localonly", action='store_true')
 
 class bcolors:
     HEADER = '\033[95m'
@@ -27,8 +36,9 @@ def sortByDistance(pos1, pos2):
     return distance1 - distance2
 
 def main():
+    args = argparser.parse_args()
     global userLocationDeci, userLocationCardinal
-    userLocationDeci = cardinalCoordsToDeci([sys.argv[1], sys.argv[2]])
+    userLocationDeci = cardinalCoordsToDeci([args.latitude, args.longitude])
     userLocationCardinal = deciCoordsToCardinal(userLocationDeci)
     print(f"{bcolors.UNDERLINE}Location set to {userLocationCardinal[0]} {userLocationCardinal[1]}{bcolors.ENDC}")
 
@@ -42,7 +52,8 @@ def main():
 
         auroraJson = auroraRes.json()
         if obsvTime != auroraJson["Observation Time"] or first:
-            print(f"\t{bcolors.BOLD}UPDATED FORCAST{bcolors.ENDC} @", datetime.now().time())
+            if not args.localonly:
+                print(f"\t{bcolors.BOLD}UPDATED FORCAST{bcolors.ENDC} @", datetime.now().time())
             coordinateData = auroraJson["coordinates"]
             coordinateData = sorted(coordinateData, key=cmp_to_key(sortByDistance))
             auroraOdds = coordinateData[0][2]
