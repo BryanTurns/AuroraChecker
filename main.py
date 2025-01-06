@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 import dateutil.tz
 
+
 CHECK_INTERVAL = 90
 
 
@@ -36,19 +37,13 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-# Positions provided by NOAA are stored [longitude, latitude]
-def sortByDistance(pos1, pos2):
-    distance1 = math.sqrt(math.pow((pos1[0] - userLocationDeci[1]), 2) + math.pow((pos1[1] - userLocationDeci[0]), 2))
-    distance2 = math.sqrt(math.pow((pos2[0] - userLocationDeci[1]), 2) + math.pow((pos2[1] - userLocationDeci[0]), 2))
-    return distance1 - distance2
-
-
 def main():
     args = argparser.parse_args()
     global userLocationDeci, userLocationCardinal
     userLocationDeci = cardinalCoordsToDeci([args.latitude, args.longitude])
     userLocationCardinal = deciCoordsToCardinal(userLocationDeci)
     print(f"{bcolors.UNDERLINE}Location set to {userLocationCardinal[0]} {userLocationCardinal[1]}{bcolors.ENDC}")
+    noaaIndex = deciCoordsToNOAAIndicies(userLocationDeci)
     obsvTime = ""
     closestPrediction = ""
     first = True
@@ -61,8 +56,7 @@ def main():
             if args.notifyglobal:
                 print(f"\t{bcolors.BOLD}UPDATED FORCAST{bcolors.ENDC} @", datetime.now().time())
             coordinateData = auroraJson["coordinates"]
-            coordinateData = sorted(coordinateData, key=cmp_to_key(sortByDistance))
-            auroraOdds = coordinateData[0][2]
+            auroraOdds = coordinateData[noaaIndex][2]
 
             oddsString = bcolors.BOLD
             if auroraOdds >= 70:
@@ -99,6 +93,8 @@ def cardinalCoordsToDeci(coords):
                     latitude = -1 * int(latitude[0:i])
                 case 'N':
                     latitude = int(latitude[0:i])
+                case '-':
+                    continue
                 case default:
                     raise Exception("latitude incorrectly formatted") 
             break
@@ -120,7 +116,7 @@ def cardinalCoordsToDeci(coords):
     if abs(int(longitude)) > 180:
         raise Exception("Longitude out of range (-180 < longitude < 180 )")
     
-    return [int(latitude), int(longitude)]
+    return (int(latitude), int(longitude))
 
 
 # coords = [latitude, longitude]
@@ -138,8 +134,19 @@ def deciCoordsToCardinal(coords):
     elif longitude < 0:
         longitude = str(-1 * longitude) + 'E'
 
-    return [latitude, longitude]
+    return (latitude, longitude)
+
+
+def deciCoordsToNOAAIndicies(coords):
+    latVal = 90 + coords[0]
+    if coords[1] > 0:
+        longVal = coords[1]
+    else:
+        longVal = 180 + (-1 * coords[1])
+    index = longVal * 181 + latVal
     
+    return index
+
 
 if __name__ == "__main__":
     main()
