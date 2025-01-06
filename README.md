@@ -1,0 +1,1 @@
+AuroraChecker is a simple CLI tool that pulls Auora data from NOAA and notifies you when there are changes to your probability of seeing an Aurora in the location you specify. The simplest way to run the command is "python aurorachecker.py [latitude] [longitude]". You can also run "python aurorachecker.py -h" to see a full list of options and additional help.

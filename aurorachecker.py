@@ -13,8 +13,8 @@ argparser = argparse.ArgumentParser(
 argparser.add_argument("latitude", help="latitude of the place you want to see the chances of an Aurora. Can be either cardinal (Ex: 58S) or decimal (Ex: -58)")
 argparser.add_argument("longitude", help="longitude of the place you want to see the chances of an Aurora. Can be either cardinal (Ex: 40W) or decimal (Ex: -40)")
 argparser.add_argument("-g", "--notifyglobal", action='store_true', help="set this if you want text output when the NOAA forcast has been updated even if your areas chances haven't change")
-argparser.add_argument("-t", "--threshold", type=int, help="sets the Aurora probabilty threshold where you will recieve text output")
-argparser.add_argument("-i", "--interval", type=int, help="set the time in seconds between requests to NOAA for new data")
+argparser.add_argument("-t", "--threshold", type=int, help="sets the Aurora probabilty threshold where you will recieve text output. The default is 0")
+argparser.add_argument("-i", "--interval", type=int, help="set the time in seconds between requests to NOAA for new data. The default is 90 seconds")
 
 
 class bcolors:
