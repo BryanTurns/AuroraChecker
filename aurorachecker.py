@@ -12,9 +12,10 @@ argparser = argparse.ArgumentParser(
 
 argparser.add_argument("latitude", help="latitude of the place you want to see the chances of an Aurora. Can be either cardinal (Ex: 58S) or decimal (Ex: -58)")
 argparser.add_argument("longitude", help="longitude of the place you want to see the chances of an Aurora. Can be either cardinal (Ex: 40W) or decimal (Ex: -40)")
-argparser.add_argument("-g", "--notifyglobal", action='store_true', help="set this if you want text output when the NOAA forcast has been updated even if your areas chances haven't change")
+argparser.add_argument("-g", "--notifyglobal", action='store_true', help="set this flag if you want text output when the NOAA forcast has been updated even if your areas chances haven't change")
 argparser.add_argument("-t", "--threshold", type=int, help="sets the Aurora probabilty threshold where you will recieve text output. The default is 0")
 argparser.add_argument("-i", "--interval", type=int, help="set the time in seconds between requests to NOAA for new data. The default is 90 seconds")
+argparser.add_argument("-q", "--quiet", action='store_true', help="set this flag to make it so the only text output you get is updates to your locations probablity")
 
 
 class bcolors:
@@ -35,15 +36,21 @@ def main():
         CHECK_INTERVAL = args.interval
     else:
         CHECK_INTERVAL = 90
+    if args.quiet:
+        QUIET = True
+    else:
+        QUIET = False
     userLocationDeci = cardinalCoordsToDeci([args.latitude, args.longitude])
     userLocationCardinal = deciCoordsToCardinal(userLocationDeci)
     noaaIndex = deciCoordsToNOAAIndicies(userLocationDeci)
-    print(f"{bcolors.UNDERLINE}Location set to {userLocationCardinal[0]} {userLocationCardinal[1]}{bcolors.ENDC}")
+    if not args.quiet:
+        print(f"{bcolors.UNDERLINE}Location set to {userLocationCardinal[0]} {userLocationCardinal[1]}{bcolors.ENDC}")
     
     prevObsvTime = None
     prevPrediction = None
     while True:
-        print(f"Checking NOAA @ {datetime.now().time()}")
+        if not QUIET:
+            print(f"Checking NOAA @ {datetime.now().strftime("%H:%M")}")
         try:
             auroraRes = requests.get("https://services.swpc.noaa.gov/json/ovation_aurora_latest.json")
         except Exception as e:
@@ -52,8 +59,8 @@ def main():
             exit(1)
         auroraJson = auroraRes.json()
         if prevObsvTime != auroraJson["Observation Time"]:
-            if args.notifyglobal:
-                print(f"\t{bcolors.BOLD}UPDATED FORCAST{bcolors.ENDC} @", datetime.now().time())
+            if args.notifyglobal and not QUIET:
+                print(f"\t{bcolors.BOLD}UPDATED FORCAST{bcolors.ENDC} @", datetime.now().strftime("%H:%M"))
             coordinateData = auroraJson["coordinates"]
             auroraOdds = coordinateData[noaaIndex][2]
 
@@ -69,14 +76,15 @@ def main():
             else:
                 oddsString += f"{bcolors.FAIL}{auroraOdds}%{bcolors.ENDC}"
             if prevPrediction != auroraOdds and (not args.threshold or args.threshold <= auroraOdds) :
-                print(f"\t{bcolors.BOLD}{bcolors.UNDERLINE}UPDATE IN YOUR AREA{bcolors.ENDC}: {oddsString}")
+                print(f"\t({datetime.now().strftime("%H:%M")}): {bcolors.BOLD}{bcolors.UNDERLINE}UPDATE IN YOUR AREA{bcolors.ENDC}: {oddsString}")
             prevPrediction = auroraOdds
 
         obsvTime = auroraJson["Observation Time"]
         userTimezone = dateutil.tz.tzoffset("System",  -1 * time.timezone)
         obsvDatetime = datetime.fromisoformat(obsvTime).astimezone(userTimezone)    
         prevObsvTime = obsvTime
-        print(f"Last update at {obsvDatetime.time()}")
+        if not QUIET:
+            print(f"Last update at {obsvDatetime.time().strftime("%H:%M")}")
 
         time.sleep(CHECK_INTERVAL)
 
