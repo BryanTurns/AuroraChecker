@@ -1,7 +1,8 @@
-import math, requests, sys, argparse
+import math, requests, sys, argparse, pytz
 from functools import cmp_to_key
-from time import sleep
+import time
 from datetime import datetime
+import dateutil.tz
 
 CHECK_INTERVAL = 90
 
@@ -42,15 +43,14 @@ def main():
     userLocationDeci = cardinalCoordsToDeci([args.latitude, args.longitude])
     userLocationCardinal = deciCoordsToCardinal(userLocationDeci)
     print(f"{bcolors.UNDERLINE}Location set to {userLocationCardinal[0]} {userLocationCardinal[1]}{bcolors.ENDC}")
-
     obsvTime = ""
     closestPrediction = ""
     first = True
     queryCount = 0
+    auroraJson = {}
     while True:
-        print(f"Checking NOAA @ ", datetime.now().time())
+        print(f"Checking NOAA @ {datetime.now().time()}")
         auroraRes = requests.get("https://services.swpc.noaa.gov/json/ovation_aurora_latest.json")
-
         auroraJson = auroraRes.json()
         if obsvTime != auroraJson["Observation Time"] or first:
             if args.notifyglobal:
@@ -58,9 +58,6 @@ def main():
             coordinateData = auroraJson["coordinates"]
             coordinateData = sorted(coordinateData, key=cmp_to_key(sortByDistance))
             auroraOdds = coordinateData[0][2]
-            
-            if args.threshold and auroraOdds < args.threshold:
-                continue
 
             oddsString = bcolors.BOLD
            
@@ -75,12 +72,13 @@ def main():
             else:
                 oddsString += f"{bcolors.FAIL}{auroraOdds}%{bcolors.ENDC}"
 
-            if closestPrediction != coordinateData[0]:
+            if closestPrediction != coordinateData[0] and (not args.threshold or args.threshold <= auroraOdds) :
                 print(f"\t{bcolors.BOLD}{bcolors.UNDERLINE}UPDATE IN YOUR AREA{bcolors.ENDC}: {oddsString}")
             closestPrediction = coordinateData[0]
 
-            
         obsvTime = auroraJson["Observation Time"]
+        userTimezone = dateutil.tz.tzoffset("System",  -1 * time.timezone)
+        obsvDatetime = datetime.fromisoformat(obsvTime).astimezone(userTimezone)    
         # if datetime.now().minute == 0 or first:
         #     kpRes = requests.get("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json")
         #     auroraRes = kpRes.json
@@ -89,7 +87,8 @@ def main():
         if first:
             first = False
     
-        sleep(CHECK_INTERVAL)
+        print(f"Last update at {obsvDatetime.time()}")
+        time.sleep(CHECK_INTERVAL)
         
 # coords = [latitude, longitude]
 def cardinalCoordsToDeci(coords):
