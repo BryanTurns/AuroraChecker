@@ -19,10 +19,11 @@ argparser = argparse.ArgumentParser(
 )
 
 
-argparser.add_argument("latitude", help="latitude of the place you want to see the chances of an Aurora. Can be either cardinal or decimal")
-argparser.add_argument("longitude", help="longitude of the place you want to see the chances of an Aurora. Can be either cardinal or decimal")
+argparser.add_argument("latitude", help="latitude of the place you want to see the chances of an Aurora. Can be either cardinal (Ex: 58S) or decimal (Ex: -58)")
+argparser.add_argument("longitude", help="longitude of the place you want to see the chances of an Aurora. Can be either cardinal (Ex: 40W) or decimal (Ex: -40)")
 argparser.add_argument("-g", "--notifyglobal", action='store_true', help="set this if you want text output when the NOAA forcast has been updated even if your areas chances haven't change")
 argparser.add_argument("-t", "--threshold", type=int, help="sets the Aurora probabilty threshold where you will recieve text output")
+argparser.add_argument("-i", "--interval", type=int, help="set the time in seconds between requests to NOAA for new data")
 
 
 class bcolors:
@@ -39,6 +40,9 @@ class bcolors:
 
 def main():
     args = argparser.parse_args()
+    global CHECK_INTERVAL
+    if args.interval != None:
+        CHECK_INTERVAL = args.interval
     global userLocationDeci, userLocationCardinal
     userLocationDeci = cardinalCoordsToDeci([args.latitude, args.longitude])
     userLocationCardinal = deciCoordsToCardinal(userLocationDeci)
@@ -47,10 +51,14 @@ def main():
     obsvTime = ""
     closestPrediction = ""
     first = True
-    auroraJson = {}
+    # auroraJson = {}
     while True:
         print(f"Checking NOAA @ {datetime.now().time()}")
-        auroraRes = requests.get("https://services.swpc.noaa.gov/json/ovation_aurora_latest.json")
+        try:
+            auroraRes = requests.get("https://services.swpc.noaa.gov/json/ovation_aurora_latest.json")
+        except Exception as e:
+            print(f"{bcolors.BOLD}No internet/NOAA site down{bcolors.ENDC}")
+            exit(1)
         auroraJson = auroraRes.json()
         if obsvTime != auroraJson["Observation Time"] or first:
             if args.notifyglobal:
@@ -88,7 +96,7 @@ def cardinalCoordsToDeci(coords):
     latitude = coords[0]
     for i in range(len(latitude)):
         if not latitude[i].isdigit():
-            match latitude[i]:
+            match latitude[i].upper():
                 case 'S':
                     latitude = -1 * int(latitude[0:i])
                 case 'N':
@@ -101,7 +109,7 @@ def cardinalCoordsToDeci(coords):
     longitude = coords[1]
     for i in range(len(longitude)):
         if not longitude[i].isdigit():
-            match longitude[i]:
+            match longitude[i].upper():
                 case 'W':
                     longitude = -1 * int(longitude[0:i])
                 case 'E':
@@ -112,10 +120,11 @@ def cardinalCoordsToDeci(coords):
                     raise Exception("Longitude incorrectly formatted") 
             break
     if abs(int(latitude)) > 90:
-        raise Exception("Latitude out of range (-90 < latitude < 90)")
+        print(f"{bcolors.BOLD}Latitude out of range (-90 < latitude < 90){bcolors.ENDC}")
+        exit(1)
     if abs(int(longitude)) > 180:
-        raise Exception("Longitude out of range (-180 < longitude < 180 )")
-    
+        print(f"{bcolors.BOLD}Longitude out of range (-180 < longitude < 180)")
+        exit(1)
     return (int(latitude), int(longitude))
 
 
@@ -127,13 +136,11 @@ def deciCoordsToCardinal(coords):
         latitude = str(latitude) + 'N'
     elif latitude < 0:
         latitude = str(-1 * latitude) + 'S'
-
     longitude = coords[1]
     if longitude >= 0:
         longitude = str(longitude) + 'W'
     elif longitude < 0:
         longitude = str(-1 * longitude) + 'E'
-
     return (latitude, longitude)
 
 
@@ -144,7 +151,6 @@ def deciCoordsToNOAAIndicies(coords):
     else:
         longVal = 180 + (-1 * coords[1])
     index = longVal * 181 + latVal
-    
     return index
 
 
