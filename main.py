@@ -6,19 +6,23 @@ import dateutil.tz
 
 CHECK_INTERVAL = 90
 
+
 # Stored as [latitude, longitude]
 userLocationDeci = [66, 37]
 userLocationCardinal = []
+
 
 argparser = argparse.ArgumentParser(
     prog="AuroraChecker",
     description="Checks NOAA for Aurora predictions and alerts you when the prediction changes"
 )
 
+
 argparser.add_argument("latitude", help="latitude of the place you want to see the chances of an Aurora. Can be either cardinal or decimal")
 argparser.add_argument("longitude", help="longitude of the place you want to see the chances of an Aurora. Can be either cardinal or decimal")
 argparser.add_argument("-g", "--notifyglobal", action='store_true', help="set this if you want text output when the NOAA forcast has been updated even if your areas chances haven't change")
 argparser.add_argument("-t", "--threshold", type=int, help="sets the Aurora probabilty threshold where you will recieve text output")
+
 
 class bcolors:
     HEADER = '\033[95m'
@@ -31,11 +35,13 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+
 # Positions provided by NOAA are stored [longitude, latitude]
 def sortByDistance(pos1, pos2):
     distance1 = math.sqrt(math.pow((pos1[0] - userLocationDeci[1]), 2) + math.pow((pos1[1] - userLocationDeci[0]), 2))
     distance2 = math.sqrt(math.pow((pos2[0] - userLocationDeci[1]), 2) + math.pow((pos2[1] - userLocationDeci[0]), 2))
     return distance1 - distance2
+
 
 def main():
     args = argparser.parse_args()
@@ -46,7 +52,6 @@ def main():
     obsvTime = ""
     closestPrediction = ""
     first = True
-    queryCount = 0
     auroraJson = {}
     while True:
         print(f"Checking NOAA @ {datetime.now().time()}")
@@ -60,7 +65,6 @@ def main():
             auroraOdds = coordinateData[0][2]
 
             oddsString = bcolors.BOLD
-           
             if auroraOdds >= 70:
                 oddsString += f"{bcolors.OKGREEN}{auroraOdds}%{bcolors.ENDC}"
             elif auroraOdds >= 50:
@@ -71,7 +75,6 @@ def main():
                 oddsString += f"{bcolors.WARNING}{auroraOdds}%{bcolors.ENDC}"
             else:
                 oddsString += f"{bcolors.FAIL}{auroraOdds}%{bcolors.ENDC}"
-
             if closestPrediction != coordinateData[0] and (not args.threshold or args.threshold <= auroraOdds) :
                 print(f"\t{bcolors.BOLD}{bcolors.UNDERLINE}UPDATE IN YOUR AREA{bcolors.ENDC}: {oddsString}")
             closestPrediction = coordinateData[0]
@@ -79,17 +82,13 @@ def main():
         obsvTime = auroraJson["Observation Time"]
         userTimezone = dateutil.tz.tzoffset("System",  -1 * time.timezone)
         obsvDatetime = datetime.fromisoformat(obsvTime).astimezone(userTimezone)    
-        # if datetime.now().minute == 0 or first:
-        #     kpRes = requests.get("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json")
-        #     auroraRes = kpRes.json
-        
+        print(f"Last update at {obsvDatetime.time()}")
 
         if first:
             first = False
-    
-        print(f"Last update at {obsvDatetime.time()}")
         time.sleep(CHECK_INTERVAL)
-        
+
+
 # coords = [latitude, longitude]
 def cardinalCoordsToDeci(coords):
     latitude = coords[0]
@@ -123,6 +122,7 @@ def cardinalCoordsToDeci(coords):
     
     return [int(latitude), int(longitude)]
 
+
 # coords = [latitude, longitude]
 # Assumes decimal coords provided are correct
 def deciCoordsToCardinal(coords):
@@ -140,7 +140,6 @@ def deciCoordsToCardinal(coords):
 
     return [latitude, longitude]
     
-
 
 if __name__ == "__main__":
     main()
