@@ -1,16 +1,7 @@
-import math, requests, sys, argparse, pytz
-from functools import cmp_to_key
+import requests, argparse
 import time
 from datetime import datetime
 import dateutil.tz
-
-
-CHECK_INTERVAL = 90
-
-
-# Stored as [latitude, longitude]
-userLocationDeci = [66, 37]
-userLocationCardinal = []
 
 
 argparser = argparse.ArgumentParser(
@@ -40,27 +31,27 @@ class bcolors:
 
 def main():
     args = argparser.parse_args()
-    global CHECK_INTERVAL
     if args.interval != None:
         CHECK_INTERVAL = args.interval
-    global userLocationDeci, userLocationCardinal
+    else:
+        CHECK_INTERVAL = 90
     userLocationDeci = cardinalCoordsToDeci([args.latitude, args.longitude])
     userLocationCardinal = deciCoordsToCardinal(userLocationDeci)
-    print(f"{bcolors.UNDERLINE}Location set to {userLocationCardinal[0]} {userLocationCardinal[1]}{bcolors.ENDC}")
     noaaIndex = deciCoordsToNOAAIndicies(userLocationDeci)
-    obsvTime = ""
-    closestPrediction = ""
-    first = True
-    # auroraJson = {}
+    print(f"{bcolors.UNDERLINE}Location set to {userLocationCardinal[0]} {userLocationCardinal[1]}{bcolors.ENDC}")
+    
+    prevObsvTime = None
+    prevPrediction = None
     while True:
         print(f"Checking NOAA @ {datetime.now().time()}")
         try:
             auroraRes = requests.get("https://services.swpc.noaa.gov/json/ovation_aurora_latest.json")
         except Exception as e:
+            # Should probably print exception
             print(f"{bcolors.BOLD}No internet/NOAA site down{bcolors.ENDC}")
             exit(1)
         auroraJson = auroraRes.json()
-        if obsvTime != auroraJson["Observation Time"] or first:
+        if prevObsvTime != auroraJson["Observation Time"]:
             if args.notifyglobal:
                 print(f"\t{bcolors.BOLD}UPDATED FORCAST{bcolors.ENDC} @", datetime.now().time())
             coordinateData = auroraJson["coordinates"]
@@ -77,17 +68,16 @@ def main():
                 oddsString += f"{bcolors.WARNING}{auroraOdds}%{bcolors.ENDC}"
             else:
                 oddsString += f"{bcolors.FAIL}{auroraOdds}%{bcolors.ENDC}"
-            if closestPrediction != coordinateData[0] and (not args.threshold or args.threshold <= auroraOdds) :
+            if prevPrediction != auroraOdds and (not args.threshold or args.threshold <= auroraOdds) :
                 print(f"\t{bcolors.BOLD}{bcolors.UNDERLINE}UPDATE IN YOUR AREA{bcolors.ENDC}: {oddsString}")
-            closestPrediction = coordinateData[0]
+            prevPrediction = auroraOdds
 
         obsvTime = auroraJson["Observation Time"]
         userTimezone = dateutil.tz.tzoffset("System",  -1 * time.timezone)
         obsvDatetime = datetime.fromisoformat(obsvTime).astimezone(userTimezone)    
+        prevObsvTime = obsvTime
         print(f"Last update at {obsvDatetime.time()}")
 
-        if first:
-            first = False
         time.sleep(CHECK_INTERVAL)
 
 
