@@ -33,6 +33,13 @@ class bcolors:
 def main():
     plt.ion()
     fig, ax = plt.subplots()
+    # print(np.arange(0, 100, step=1))
+    ax.set_yticks(np.arange(0, 101, step=10))
+    ax.set_ylim(0, 100)
+    ax.set_title("Aurora Odds in Your Location")
+    ax.set_xlabel("Time")
+    ax.set_ylabel("% Chance of Aurora")
+
     args = argparser.parse_args()
     if args.interval != None:
         CHECK_INTERVAL = args.interval
@@ -81,7 +88,6 @@ def main():
             if prevPrediction != auroraOdds and (not args.threshold or args.threshold <= auroraOdds) :
                 print(f"\t({datetime.now().strftime("%H:%M")}): {bcolors.BOLD}{bcolors.UNDERLINE}UPDATE IN YOUR AREA{bcolors.ENDC}: {oddsString}")
             prevPrediction = auroraOdds
-            # prevPredictionList.append(auroraOdds)
 
         obsvTime = auroraJson["Observation Time"]
         userTimezone = dateutil.tz.tzoffset("System",  -1 * time.timezone)
@@ -91,7 +97,7 @@ def main():
         graphData[1].append(auroraOdds)
         graphData[0].append(datetime.now())
         if len(graphData[0]) > 1:
-            ax.plot(graphData[0], graphData[1])
+            ax.plot(graphData[0], graphData[1], 'green')
             plt.draw()
             plt.pause(0.25)
         
