@@ -48,8 +48,7 @@ def main():
     if not args.quiet:
         print(f"{bcolors.UNDERLINE}Location set to {userLocationCardinal[0]} {userLocationCardinal[1]}{bcolors.ENDC}")
     
-    prevPredictionList = []
-    prevTimeList = []
+    graphData = ([], [])
     prevObsvTime = None
     prevPrediction = None
     while True:
@@ -89,18 +88,12 @@ def main():
         obsvDatetime = datetime.fromisoformat(obsvTime).astimezone(userTimezone)    
         prevObsvTime = obsvTime
 
-        
-        prevPredictionList.append(auroraOdds)
-        prevTimeList.append(datetime.now())
-        if len(prevPredictionList) > 1:
-            print("Plotting: ", prevPredictionList)
-            ax.plot(prevTimeList, prevPredictionList)
+        graphData[1].append(auroraOdds)
+        graphData[0].append(datetime.now())
+        if len(graphData[0]) > 1:
+            ax.plot(graphData[0], graphData[1])
             plt.draw()
             plt.pause(0.25)
-
-        
-        
-        
         
         if not QUIET:
             print(f"Last update at {obsvDatetime.time().strftime("%H:%M")}")
