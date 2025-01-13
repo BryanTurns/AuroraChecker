@@ -31,15 +31,16 @@ class bcolors:
 
 
 def main():
+    # Setup the graph
     plt.ion()
     fig, ax = plt.subplots()
-    # print(np.arange(0, 100, step=1))
     ax.set_yticks(np.arange(0, 101, step=10))
     ax.set_ylim(0, 100)
     ax.set_title("Aurora Odds in Your Location")
     ax.set_xlabel("Time")
     ax.set_ylabel("% Chance of Aurora")
 
+    # Parse arguments and initiialize settings
     args = argparser.parse_args()
     if args.interval != None:
         CHECK_INTERVAL = args.interval
@@ -52,28 +53,35 @@ def main():
     userLocationDeci = cardinalCoordsToDeci([args.latitude, args.longitude])
     userLocationCardinal = deciCoordsToCardinal(userLocationDeci)
     noaaIndex = deciCoordsToNOAAIndicies(userLocationDeci)
-    if not args.quiet:
+    if not QUIET:
         print(f"{bcolors.UNDERLINE}Location set to {userLocationCardinal[0]} {userLocationCardinal[1]}{bcolors.ENDC}")
     
     graphData = ([], [])
     prevObsvTime = None
     prevPrediction = None
+    # Update loop
     while True:
         if not QUIET:
             print(f"Checking NOAA @ {datetime.now().strftime("%H:%M")}")
+        # Get data from NOAA
         try:
             auroraRes = requests.get("https://services.swpc.noaa.gov/json/ovation_aurora_latest.json")
         except Exception as e:
             # Should probably print exception
             print(f"{bcolors.BOLD}No internet/NOAA site down{bcolors.ENDC}")
             exit(1)
+
         auroraJson = auroraRes.json()
+        # Check if there has been an update
         if prevObsvTime != auroraJson["Observation Time"]:
             if args.notifyglobal and not QUIET:
                 print(f"\t{bcolors.BOLD}UPDATED FORCAST{bcolors.ENDC} @", datetime.now().strftime("%H:%M"))
+            # Extract the odds of an Aurora for the user-set latitude and longitude
             coordinateData = auroraJson["coordinates"]
+            # NOAA coordinateData: [[longitude(0-359), latitude(-90,90), odds (0-100)]]. Refer to deciCoordsToNOAA indicies to better understand indexing
             auroraOdds = coordinateData[noaaIndex][2]
 
+            # Add color based on odds
             oddsString = bcolors.BOLD
             if auroraOdds >= 70:
                 oddsString += f"{bcolors.OKGREEN}{auroraOdds}%{bcolors.ENDC}"
@@ -89,16 +97,19 @@ def main():
                 print(f"\t({datetime.now().strftime("%H:%M")}): {bcolors.BOLD}{bcolors.UNDERLINE}UPDATE IN YOUR AREA{bcolors.ENDC}: {oddsString}")
             prevPrediction = auroraOdds
 
+        # Get the most recent observation time and set the timezone to the local system timezone
         obsvTime = auroraJson["Observation Time"]
         userTimezone = dateutil.tz.tzoffset("System",  -1 * time.timezone)
         obsvDatetime = datetime.fromisoformat(obsvTime).astimezone(userTimezone)    
         prevObsvTime = obsvTime
 
+        # Graph and display the data
         graphData[1].append(auroraOdds)
         graphData[0].append(datetime.now())
         if len(graphData[0]) > 1:
             ax.plot(graphData[0], graphData[1], 'green')
             plt.draw()
+            # Necessary to allow the refresh
             plt.pause(0.25)
         
         if not QUIET:
@@ -158,7 +169,7 @@ def deciCoordsToCardinal(coords):
         longitude = str(-1 * longitude) + 'E'
     return (latitude, longitude)
 
-
+# NOAA data is provided in a long 1d array
 def deciCoordsToNOAAIndicies(coords):
     latVal = 90 + coords[0]
     if coords[1] > 0:
