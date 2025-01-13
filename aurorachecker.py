@@ -1,5 +1,7 @@
 import requests, argparse, time, dateutil.tz
 from datetime import datetime
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 argparser = argparse.ArgumentParser(
@@ -29,6 +31,8 @@ class bcolors:
 
 
 def main():
+    plt.ion()
+    fig, ax = plt.subplots()
     args = argparser.parse_args()
     if args.interval != None:
         CHECK_INTERVAL = args.interval
@@ -44,6 +48,7 @@ def main():
     if not args.quiet:
         print(f"{bcolors.UNDERLINE}Location set to {userLocationCardinal[0]} {userLocationCardinal[1]}{bcolors.ENDC}")
     
+    prevPredictionList = []
     prevObsvTime = None
     prevPrediction = None
     while True:
@@ -76,12 +81,24 @@ def main():
             if prevPrediction != auroraOdds and (not args.threshold or args.threshold <= auroraOdds) :
                 print(f"\t({datetime.now().strftime("%H:%M")}): {bcolors.BOLD}{bcolors.UNDERLINE}UPDATE IN YOUR AREA{bcolors.ENDC}: {oddsString}")
             prevPrediction = auroraOdds
+            # prevPredictionList.append(auroraOdds)
 
         obsvTime = auroraJson["Observation Time"]
         userTimezone = dateutil.tz.tzoffset("System",  -1 * time.timezone)
         obsvDatetime = datetime.fromisoformat(obsvTime).astimezone(userTimezone)    
         prevObsvTime = obsvTime
 
+        prevPredictionList.append(auroraOdds)
+        if len(prevPredictionList) > 2:
+            print("Plotting: ", prevPredictionList)
+            ax.plot(prevPredictionList)
+            plt.draw()
+            plt.pause(0.05)
+
+        
+        
+        
+        
         if not QUIET:
             print(f"Last update at {obsvDatetime.time().strftime("%H:%M")}")
         time.sleep(CHECK_INTERVAL)
