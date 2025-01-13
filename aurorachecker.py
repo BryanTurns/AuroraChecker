@@ -2,7 +2,11 @@ import requests, argparse, time, dateutil.tz
 from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
+from netCDF4 import Dataset
 
+file_id = Dataset("data.nc")
+print(file_id.variables["time"][:])
+# Product m1s: Magnetometer 1 second resolution data
 
 argparser = argparse.ArgumentParser(
     prog="AuroraChecker",
@@ -57,7 +61,6 @@ def main():
         ax.set_xlabel("Time")
         ax.set_ylabel("% Chance of Aurora")
 
-
     graphData = ([], [])
     prevObsvTime = None
     prevPrediction = None
@@ -65,7 +68,6 @@ def main():
     while True:
         if not QUIET:
             print(f"Checking NOAA @ {datetime.now().strftime("%H:%M")}")
-        # Get data from NOAA
         try:
             auroraRes = requests.get("https://services.swpc.noaa.gov/json/ovation_aurora_latest.json")
         except Exception as e:
