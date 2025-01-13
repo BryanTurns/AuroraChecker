@@ -49,6 +49,7 @@ def main():
         print(f"{bcolors.UNDERLINE}Location set to {userLocationCardinal[0]} {userLocationCardinal[1]}{bcolors.ENDC}")
     
     prevPredictionList = []
+    prevTimeList = []
     prevObsvTime = None
     prevPrediction = None
     while True:
@@ -88,12 +89,14 @@ def main():
         obsvDatetime = datetime.fromisoformat(obsvTime).astimezone(userTimezone)    
         prevObsvTime = obsvTime
 
+        
         prevPredictionList.append(auroraOdds)
-        if len(prevPredictionList) > 2:
+        prevTimeList.append(datetime.now())
+        if len(prevPredictionList) > 1:
             print("Plotting: ", prevPredictionList)
-            ax.plot(prevPredictionList)
+            ax.plot(prevTimeList, prevPredictionList)
             plt.draw()
-            plt.pause(0.05)
+            plt.pause(0.25)
 
         
         
