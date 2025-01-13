@@ -12,11 +12,11 @@ argparser = argparse.ArgumentParser(
 
 argparser.add_argument("latitude", help="latitude of the place you want to see the chances of an Aurora. Can be either cardinal (Ex: 58S) or decimal (Ex: -58)")
 argparser.add_argument("longitude", help="longitude of the place you want to see the chances of an Aurora. Can be either cardinal (Ex: 40W) or decimal (Ex: -40)")
-argparser.add_argument("-g", "--notifyglobal", action='store_true', help="set this flag if you want text output when the NOAA forcast has been updated even if your areas chances haven't change")
+argparser.add_argument("-gl", "--notifyglobal", action='store_true', help="set this flag if you want text output when the NOAA forcast has been updated even if your areas chances haven't change")
 argparser.add_argument("-t", "--threshold", type=int, help="sets the Aurora probabilty threshold where you will recieve text output. The default is 0")
 argparser.add_argument("-i", "--interval", type=int, help="set the time in seconds between requests to NOAA for new data. The default is 90 seconds")
 argparser.add_argument("-q", "--quiet", action='store_true', help="set this flag to make it so the only text output you get is updates to your locations probablity")
-
+argparser.add_argument("-g", "--graph", action='store_true', help="set this flag to display graphs")
 
 class bcolors:
     HEADER = '\033[95m'
@@ -31,15 +31,6 @@ class bcolors:
 
 
 def main():
-    # Setup the graph
-    plt.ion()
-    fig, ax = plt.subplots()
-    ax.set_yticks(np.arange(0, 101, step=10))
-    ax.set_ylim(0, 100)
-    ax.set_title("Aurora Odds in Your Location")
-    ax.set_xlabel("Time")
-    ax.set_ylabel("% Chance of Aurora")
-
     # Parse arguments and initiialize settings
     args = argparser.parse_args()
     if args.interval != None:
@@ -56,6 +47,17 @@ def main():
     if not QUIET:
         print(f"{bcolors.UNDERLINE}Location set to {userLocationCardinal[0]} {userLocationCardinal[1]}{bcolors.ENDC}")
     
+    # Setup the graph
+    if args.graph:
+        plt.ion()
+        fig, ax = plt.subplots()
+        ax.set_yticks(np.arange(0, 101, step=10))
+        ax.set_ylim(0, 100)
+        ax.set_title("Aurora Odds in Your Location")
+        ax.set_xlabel("Time")
+        ax.set_ylabel("% Chance of Aurora")
+
+
     graphData = ([], [])
     prevObsvTime = None
     prevPrediction = None
@@ -104,13 +106,14 @@ def main():
         prevObsvTime = obsvTime
 
         # Graph and display the data
-        graphData[1].append(auroraOdds)
-        graphData[0].append(datetime.now())
-        if len(graphData[0]) > 1:
-            ax.plot(graphData[0], graphData[1], 'green')
-            plt.draw()
-            # Necessary to allow the refresh
-            plt.pause(0.25)
+        if args.graph:
+            graphData[1].append(auroraOdds)
+            graphData[0].append(datetime.now())
+            if len(graphData[0]) > 1:
+                ax.plot(graphData[0], graphData[1], 'green')
+                plt.draw()
+                # Necessary to allow the refresh
+                plt.pause(0.25)
         
         if not QUIET:
             print(f"Last update at {obsvDatetime.time().strftime("%H:%M")}")
