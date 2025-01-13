@@ -1,7 +1,5 @@
-import requests, argparse
-import time
+import requests, argparse, time, dateutil.tz
 from datetime import datetime
-import dateutil.tz
 
 
 argparser = argparse.ArgumentParser(
@@ -83,9 +81,9 @@ def main():
         userTimezone = dateutil.tz.tzoffset("System",  -1 * time.timezone)
         obsvDatetime = datetime.fromisoformat(obsvTime).astimezone(userTimezone)    
         prevObsvTime = obsvTime
+
         if not QUIET:
             print(f"Last update at {obsvDatetime.time().strftime("%H:%M")}")
-
         time.sleep(CHECK_INTERVAL)
 
 
