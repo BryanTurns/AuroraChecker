@@ -2,11 +2,7 @@ import requests, argparse, time, dateutil.tz
 from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
-from netCDF4 import Dataset
 
-file_id = Dataset("data.nc")
-print(file_id.variables["time"][:])
-# Product m1s: Magnetometer 1 second resolution data
 
 argparser = argparse.ArgumentParser(
     prog="AuroraChecker",
@@ -67,7 +63,7 @@ def main():
     # Update loop
     while True:
         if not QUIET:
-            print(f"Checking NOAA @ {datetime.now().strftime("%H:%M")}")
+            print(f"Checking NOAA @ {datetime.now().strftime('%H:%M')}")
         try:
             auroraRes = requests.get("https://services.swpc.noaa.gov/json/ovation_aurora_latest.json")
         except Exception as e:
@@ -79,7 +75,7 @@ def main():
         # Check if there has been an update
         if prevObsvTime != auroraJson["Observation Time"]:
             if args.notifyglobal and not QUIET:
-                print(f"\t{bcolors.BOLD}UPDATED FORCAST{bcolors.ENDC} @", datetime.now().strftime("%H:%M"))
+                print(f"\t{bcolors.BOLD}UPDATED FORCAST{bcolors.ENDC} @", datetime.now().strftime('%H:%M'))
             # Extract the odds of an Aurora for the user-set latitude and longitude
             coordinateData = auroraJson["coordinates"]
             # NOAA coordinateData: [[longitude(0-359), latitude(-90,90), odds (0-100)]]. Refer to deciCoordsToNOAA indicies to better understand indexing
@@ -98,7 +94,7 @@ def main():
             else:
                 oddsString += f"{bcolors.FAIL}{auroraOdds}%{bcolors.ENDC}"
             if prevPrediction != auroraOdds and (not args.threshold or args.threshold <= auroraOdds) :
-                print(f"\t({datetime.now().strftime("%H:%M")}): {bcolors.BOLD}{bcolors.UNDERLINE}UPDATE IN YOUR AREA{bcolors.ENDC}: {oddsString}")
+                print(f"\t({datetime.now().strftime('%H:%M')}): {bcolors.BOLD}{bcolors.UNDERLINE}UPDATE IN YOUR AREA{bcolors.ENDC}: {oddsString}")
             prevPrediction = auroraOdds
 
         # Get the most recent observation time and set the timezone to the local system timezone
@@ -118,7 +114,7 @@ def main():
                 plt.pause(0.25)
         
         if not QUIET:
-            print(f"Last update at {obsvDatetime.time().strftime("%H:%M")}")
+            print(f"Last update at {obsvDatetime.time().strftime('%H:%M')}")
         time.sleep(CHECK_INTERVAL)
 
 
